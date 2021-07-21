@@ -3,8 +3,8 @@ This project is to help me become more familiar with goespacial data.
 I decided to use **Javascript** and **HTML** insead of doing it all in R studio, or the Python API becuase I want to become more familiar with Javascript and HTML.
 
 Data is the longitude and latatude of US state capitals, found on GitHub.
-
-[Software Demo Video](https://youtu.be/P-gckJMn34w)
+**
+[Software Demo Video](https://youtu.be/P-gckJMn34w)**
 
 # Development Environment
 
