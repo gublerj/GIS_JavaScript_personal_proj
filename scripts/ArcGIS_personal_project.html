@@ -119,10 +119,6 @@
                     // Did we get a response (4) and was the response successful (200)
                     if (this.readyState == 4 && this.status == 200) {
                         
-                        // Convert the JSON text to JSON object that we
-                        // can loop through
-                        var data = JSON.parse(this.responseText);
-                        
                         // Loop through each feature in the features list
                         for (let i=0; i < dat.length; i++) {    
 
