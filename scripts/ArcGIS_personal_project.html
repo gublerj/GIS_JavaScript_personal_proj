@@ -1,0 +1,179 @@
+ <!-- https://codepen.io/pen?&editors=100 -->
+
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta
+      name="viewport"
+      content="initial-scale=1,maximum-scale=1,user-scalable=no"
+    />
+    <title>ArcGIS State Capitals</title>
+
+    <link
+      rel="stylesheet"
+      href="https://js.arcgis.com/4.20/esri/themes/light/main.css"
+    />
+    <script
+    src="https://code.jquery.com/jquery-3.6.0.min.js"
+    integrity="sha256-/xUj+3OJU5yExlq6GSYGSHk7tPXikynS7ogEvDej/m4="
+    crossorigin="anonymous"></script>
+
+    <script src="https://js.arcgis.com/4.20/"></script>
+
+    <style>
+      html,
+      body,
+      #viewDiv {
+        padding: 0;
+        margin: 0;
+        height: 100%;
+        width: 100%;
+      }
+    </style>
+
+    <script>
+        let url = 'https://raw.githubusercontent.com/jasperdebie/VisInfo/master/us-state-capitals.csv'
+        let dat = []
+
+        function getData() {
+            $.ajax({
+                url: url,
+                async: false,
+                success: function (csvd) {
+                    dat = csvToArray(csvd)
+                },
+                dataType: "text",
+                complete: function () {
+
+                }
+            });
+        }
+
+
+        function csvToArray(str, delimiter = ",") {
+            // slice from start of text to the first \n index
+            // use split to create an array from string by delimiter
+            const headers = str.slice(0, str.indexOf("\n")).split(delimiter);
+
+            // slice from \n index + 1 to the end of the text
+            // use split to create an array of each csv value row
+            const rows = str.slice(str.indexOf("\n") + 1).split("\n");
+
+            // Map the rows
+            // split values from each row into an array
+            // use headers.reduce to create an object
+            // object properties derived from headers:values
+            // the object passed as an element of the array
+            const arr = rows.map(function (row) {
+                const values = row.split(delimiter);
+                const el = headers.reduce(function (object, header, index) {
+                object[header] = values[index];
+                return object;
+                }, {});
+                return el;
+            });
+
+            // return the array
+            return arr;
+        }
+
+        getData()
+
+
+        require([
+            "esri/Map",
+            "esri/views/MapView",
+            "esri/Graphic",
+            "esri/layers/GraphicsLayer"	
+        ], function(Map, MapView, Graphic, GraphicsLayer) {
+
+                // Create a basemap for the map view
+                var map = new Map({
+                    basemap: "topo-vector"
+                });
+
+                // Create a map view for the HTML centered at Rexburg
+                // (Long = -111.7896876, Lat = 43.8260227) using the basemap
+                // previously created.
+                var view = new MapView({
+                    container: "viewDiv",  // Where in the html to put this 
+                    map: map,              // The basemap we created above
+                    center: [-111.7896876, 43.8260227], // Rexburg longitude, latitude
+                    zoom: 3                // zoom in level
+                });
+
+                // Create a Graphics Layer which can be used to draw graphics
+                // on the map
+                var graphicsLayer = new GraphicsLayer();
+                map.add(graphicsLayer);        
+
+                // We will use the XMLHttpRequest object to read data from the USGS
+                // server and populate graphics on our map based on the results
+                // https://www.w3schools.com/js/js_ajax_http.asp
+                var xmlhttp = new XMLHttpRequest();
+
+                // This long function below is what will happen when we get a result
+                // The actual sending of the http request and reading response occurs
+                // after the definition of this function.
+                xmlhttp.onreadystatechange = function() {
+                    // Did we get a response (4) and was the response successful (200)
+                    if (this.readyState == 4 && this.status == 200) {
+                        
+                        // Convert the JSON text to JSON object that we
+                        // can loop through
+                        var data = JSON.parse(this.responseText);
+                        
+                        // Loop through each feature in the features list
+                        for (let i=0; i < dat.length; i++) {    
+
+                            // Define location to draw
+                            // This JS map is expected by ArcGIS to make a graphic
+                            console.log(dat[i])
+                            var point = {
+                                type: "point",
+                                longitude: dat[i].longitude,
+                                latitude: dat[i].latitude
+                            };
+                    
+                            // Determine symbol color
+                            var mag_color = [247,241,54];
+                            // Create a symbol
+                            // This JS map is expected by ArcGIS to make a graphic                 
+                            var simpleMarkerSymbol = {
+                                type: "simple-marker",
+                                color: mag_color,  
+                                outline: {
+                                color: [255, 255, 255], // white
+                                width: 1
+                                }
+                            };
+                    
+                            // Combine location and symbol to create a graphic object
+                            // Also include the earthquake properties data so it
+                            // can be used in the popup template.
+                            var pointGraphic = new Graphic({
+                                geometry: point,
+                                symbol: simpleMarkerSymbol,
+                            });
+
+                            // Add the graphic (with its popup) to the graphics layer
+                            graphicsLayer.add(pointGraphic);
+                        } // End of Loop
+                    }
+                }; // End of XML Call back Function
+
+                // Time to actually send the GET request to the USGS.  When we get a response
+                // it will call and execute the function we defined above.
+                xmlhttp.open("GET", "https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/all_week.geojson", true);
+                xmlhttp.send();
+
+        });
+
+    </script>
+  
+</head>
+
+  <body>
+    <div id="viewDiv"></div>
+  </body>
+</html>
